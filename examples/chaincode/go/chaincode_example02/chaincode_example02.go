@@ -23,6 +23,7 @@ package main
 //hard-coding.
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"strconv"
@@ -88,6 +89,16 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
 	A = args[0]
 	B = args[1]
+
+	rawCallerCert, err := stub.GetCallerCertificate()
+	if err != nil {
+		fmt.Printf("Get caller certificate fail: %v\n", err)
+	}
+	callerCert, err := x509.ParseCertificate(rawCallerCert)
+	if err != nil {
+		fmt.Printf("Parse caller certificate fail: %v\n", err)
+	}
+	fmt.Printf("Get cert subject: %v\n", callerCert.Subject.CommonName)
 
 	// Get the state from the ledger
 	// TODO: will be nice to have a GetAllState call to ledger

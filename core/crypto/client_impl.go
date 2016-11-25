@@ -24,6 +24,8 @@ import (
 	obc "github.com/hyperledger/fabric/protos"
 )
 
+var USING_ECERT bool = true
+
 type clientImpl struct {
 	*nodeImpl
 
@@ -43,20 +45,24 @@ func (client *clientImpl) NewChaincodeDeployTransaction(chaincodeDeploymentSpec 
 		return nil, utils.ErrNotInitialized
 	}
 
-	// Get next available (not yet used) transaction certificate
-	tCerts, err := client.tCertPool.GetNextTCerts(1, attributes...)
-	if err != nil {
-		client.Errorf("Failed to obtain a (not yet used) TCert for Chaincode Deploy[%s].", err.Error())
-		return nil, err
-	}
+	if !USING_ECERT {
+		// Get next available (not yet used) transaction certificate
+		tCerts, err := client.tCertPool.GetNextTCerts(1, attributes...)
+		if err != nil {
+			client.Errorf("Failed to obtain a (not yet used) TCert for Chaincode Deploy[%s].", err.Error())
+			return nil, err
+		}
 
-	if len(tCerts) != 1 {
-		client.Error("Failed to obtain a (not yet used) TCert.")
-		return nil, errors.New("Failed to obtain a TCert for Chaincode Deploy Transaction using TCert. Expected exactly one returned TCert.")
-	}
+		if len(tCerts) != 1 {
+			client.Error("Failed to obtain a (not yet used) TCert.")
+			return nil, errors.New("Failed to obtain a TCert for Chaincode Deploy Transaction using TCert. Expected exactly one returned TCert.")
+		}
 
-	// Create Transaction
-	return client.newChaincodeDeployUsingTCert(chaincodeDeploymentSpec, uuid, attributes, tCerts[0].tCert, nil)
+		// Create Transaction
+		return client.newChaincodeDeployUsingTCert(chaincodeDeploymentSpec, uuid, attributes, tCerts[0].tCert, nil)
+	} else {
+		return client.newChaincodeDeployUsingECert(chaincodeDeploymentSpec, uuid, nil)
+	}
 }
 
 // GetNextTCerts Gets next available (not yet used) transaction certificate.
@@ -90,20 +96,24 @@ func (client *clientImpl) NewChaincodeExecute(chaincodeInvocation *obc.Chaincode
 		return nil, utils.ErrNotInitialized
 	}
 
-	// Get next available (not yet used) transaction certificate
-	tBlocks, err := client.tCertPool.GetNextTCerts(1, attributes...)
-	if err != nil {
-		client.Errorf("Failed to obtain a (not yet used) TCert [%s].", err.Error())
-		return nil, err
-	}
+	if !USING_ECERT {
+		// Get next available (not yet used) transaction certificate
+		tBlocks, err := client.tCertPool.GetNextTCerts(1, attributes...)
+		if err != nil {
+			client.Errorf("Failed to obtain a (not yet used) TCert [%s].", err.Error())
+			return nil, err
+		}
 
-	if len(tBlocks) != 1 {
-		client.Error("Failed to obtain a (not yet used) TCert.")
-		return nil, errors.New("Failed to obtain a TCert for Chaincode Execution. Expected exactly one returned TCert.")
-	}
+		if len(tBlocks) != 1 {
+			client.Error("Failed to obtain a (not yet used) TCert.")
+			return nil, errors.New("Failed to obtain a TCert for Chaincode Execution. Expected exactly one returned TCert.")
+		}
 
-	// Create Transaction
-	return client.newChaincodeExecuteUsingTCert(chaincodeInvocation, uuid, attributes, tBlocks[0].tCert, nil)
+		// Create Transaction
+		return client.newChaincodeExecuteUsingTCert(chaincodeInvocation, uuid, attributes, tBlocks[0].tCert, nil)
+	} else {
+		return client.newChaincodeExecuteUsingECert(chaincodeInvocation, uuid, nil)
+	}
 }
 
 // NewChaincodeQuery is used to query chaincode's functions.
@@ -113,20 +123,24 @@ func (client *clientImpl) NewChaincodeQuery(chaincodeInvocation *obc.ChaincodeIn
 		return nil, utils.ErrNotInitialized
 	}
 
-	// Get next available (not yet used) transaction certificate
-	tBlocks, err := client.tCertPool.GetNextTCerts(1, attributes...)
-	if err != nil {
-		client.Errorf("Failed to obtain a (not yet used) TCert [%s].", err.Error())
-		return nil, err
-	}
+	if !USING_ECERT {
+		// Get next available (not yet used) transaction certificate
+		tBlocks, err := client.tCertPool.GetNextTCerts(1, attributes...)
+		if err != nil {
+			client.Errorf("Failed to obtain a (not yet used) TCert [%s].", err.Error())
+			return nil, err
+		}
 
-	if len(tBlocks) != 1 {
-		client.Error("Failed to obtain a (not yet used) TCert.")
-		return nil, errors.New("Failed to obtain a TCert for Chaincode Invocation. Expected exactly one returned TCert.")
-	}
+		if len(tBlocks) != 1 {
+			client.Error("Failed to obtain a (not yet used) TCert.")
+			return nil, errors.New("Failed to obtain a TCert for Chaincode Invocation. Expected exactly one returned TCert.")
+		}
 
-	// Create Transaction
-	return client.newChaincodeQueryUsingTCert(chaincodeInvocation, uuid, attributes, tBlocks[0].tCert, nil)
+		// Create Transaction
+		return client.newChaincodeQueryUsingTCert(chaincodeInvocation, uuid, attributes, tBlocks[0].tCert, nil)
+	} else {
+		return client.newChaincodeQueryUsingECert(chaincodeInvocation, uuid, nil)
+	}
 }
 
 // GetEnrollmentCertHandler returns a CertificateHandler whose certificate is the enrollment certificate
