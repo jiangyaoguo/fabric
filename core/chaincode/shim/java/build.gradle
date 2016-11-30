@@ -17,8 +17,7 @@ limitations under the License.
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral()
-        jcenter()
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
     }
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.0'
@@ -48,8 +47,8 @@ sourceSets {
 }
 
 repositories {
-    mavenLocal()
-    mavenCentral()
+	mavenLocal()
+    maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
 }
 
 apply plugin: "com.google.osdetector"

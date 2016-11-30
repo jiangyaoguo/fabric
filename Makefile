@@ -185,7 +185,7 @@ linter: buildenv
 %/chaintool: Makefile
 	@echo "Installing chaintool"
 	@mkdir -p $(@D)
-	curl -L $(CHAINTOOL_URL) > $@
+	cp /home/yaoguo/Downloads/openvpn/My_VPN/chaintool $@
 	chmod +x $@
 
 # We (re)build a package within a docker context but persist the $GOPATH/pkg
@@ -218,8 +218,8 @@ build/docker/gotools: gotools/Makefile
 		make install BINDIR=/opt/gotools/bin OBJDIR=/opt/gotools/obj
 
 # Both peer and peer-docker depend on ccenv and javaenv (all docker env images it supports).
-build/bin/peer: build/image/ccenv/$(DUMMY) build/image/javaenv/$(DUMMY)
-build/image/peer/$(DUMMY): build/image/ccenv/$(DUMMY) build/image/javaenv/$(DUMMY)
+build/bin/peer: build/image/ccenv/$(DUMMY)
+build/image/peer/$(DUMMY): build/image/ccenv/$(DUMMY)
 
 build/bin/%: $(PROJECT_FILES)
 	@mkdir -p $(@D)
@@ -245,9 +245,11 @@ build/image/testenv/payload:    build/docker/bin/orderer \
 				build/docker/bin/peer \
 				build/sampleconfig.tar.bz2 \
 				images/testenv/install-softhsm2.sh
-build/image/zookeeper/payload:  images/zookeeper/docker-entrypoint.sh
+build/image/zookeeper/payload:  images/zookeeper/docker-entrypoint.sh \
+				images/zookeeper/zookeeper-3.4.9.tar.gz
 build/image/kafka/payload:      images/kafka/docker-entrypoint.sh \
-				images/kafka/kafka-run-class.sh
+				images/kafka/kafka-run-class.sh \
+				images/kafka/kafka_2.11-0.9.0.1.tgz
 build/image/couchdb/payload:	images/couchdb/docker-entrypoint.sh \
 				images/couchdb/local.ini \
 				images/couchdb/vm.args
