@@ -34,29 +34,51 @@ updateAnchorPeers 2
 
 ## Install chaincode on Peer0/Org1 and Peer2/Org2
 echo "Installing chaincode v1 on org1/peer0..."
-installChaincode 0 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 1.0
+installChaincode 0 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v1 1.0
 echo "Install chaincode v1 on org2/peer2..."
-installChaincode 2 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 1.0
+installChaincode 2 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v1 1.0
 
 #Instantiate chaincode on Peer2/Org2
-echo "Instantiating chaincode on org2/peer2..."
-instantiateChaincode 2 1.0 '{"Args":["init","a","100","b","200"]}'
+echo "Instantiating chaincode v1 on org2/peer2..."
+instantiateChaincode 2 1.0 '{"Args":["init","100","200"]}'
+
+#Invoke on chaincode on Peer0/Org1
+echo "send Invoke transaction on org1/peer0 ..."
+chaincodeInvoke 0 '{"Args":["invoke","10"]}'
+
+#Query on chaincode on Peer2/Org2
+echo "send Invoke transaction on org1/peer0 ..."
+chaincodeQuery 2 a 90
+
+## Install new chaincode on Peer0/Org1 and Peer2/Org2
+echo "Installing chaincode v2 on org1/peer0..."
+installChaincode 0 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v2 2.0
+echo "Install chaincode v2 on org2/peer2..."
+installChaincode 2 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v2 2.0
+
+#Upgrade chaincode to version 2.0 on Peer2/Org2
+echo "upgrade chaincode to v2 on org2/peer2 ..."
+upgradeChaincode 2 2.0 '{"Args":["init","a","200","c","300"]}'
 
 #Query on chaincode on Peer0/Org1
 echo "Querying chaincode on org1/peer0..."
-chaincodeQuery 0 a 100
+chaincodeQuery 0 a 200
+chaincodeQuery 0 b 210
+chaincodeQuery 0 c 300
 
 #Invoke on chaincode on Peer0/Org1
 echo "Sending invoke transaction on org1/peer0..."
-chaincodeInvoke 0 '{"Args":["invoke","a","b","10"]}'
+chaincodeInvoke 0 '{"Args":["invoke","a","c","10"]}'
 
 ## Install new chaincode on Peer3/Org2
 echo "Installing chaincode v2 on org2/peer3..."
-installChaincode 3 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 1.0
+installChaincode 3 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v2 2.0
 
 #Query on chaincode on Peer3/Org2
 echo "Querying chaincode on org2/peer3..."
-chaincodeQuery 3 a 90
+chaincodeQuery 3 a 190
+chaincodeQuery 3 b 210
+chaincodeQuery 3 c 310
 
 echo
 echo "===================== All GOOD, End-2-End execution completed ===================== "

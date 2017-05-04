@@ -15,15 +15,16 @@ IF_COUCHDB="$4"
 
 COMPOSE_FILE=docker-compose-cli.yaml
 COMPOSE_FILE_COUCH=docker-compose-couch.yaml
+COMPOSE_FILE_TEST=docker-compose-test.yaml
 #COMPOSE_FILE=docker-compose-e2e.yaml
 
 function printHelp () {
-	echo "Usage: ./network_setup <up|down> <\$channel-name> <\$cli_timeout> <couchdb>.\nThe arguments must be in order."
+	echo -e "Usage: ./network_setup <up|test|down> <\$channel-name> <\$cli_timeout> <couchdb>.\nThe arguments must be in order."
 }
 
 function validateArgs () {
 	if [ -z "${UP_DOWN}" ]; then
-		echo "Option up / down / restart not mentioned"
+		echo "Option up / test / down / restart not mentioned"
 		printHelp
 		exit 1
 	fi
@@ -85,11 +86,34 @@ function networkDown () {
     rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config
 }
 
+function e2eTest () {
+    if [ -f "./crypto-config" ]; then
+      echo "crypto-config directory already exists."
+    else
+      #Generate all the artifacts that includes org certs, orderer genesis block,
+      # channel configuration transaction
+      source generateArtifacts.sh $CH_NAME
+    fi
+
+    if [ "${IF_COUCHDB}" == "couchdb" ]; then
+      CHANNEL_NAME=$CH_NAME TIMEOUT=$CLI_TIMEOUT docker-compose -f $COMPOSE_FILE_TEST -f $COMPOSE_FILE_COUCH up -d 2>&1
+    else
+      CHANNEL_NAME=$CH_NAME TIMEOUT=$CLI_TIMEOUT docker-compose -f $COMPOSE_FILE_TEST up -d 2>&1
+    fi
+    if [ $? -ne 0 ]; then
+	echo "ERROR !!!! Unable to pull the images "
+	exit 1
+    fi
+    docker logs -f cli
+}
+
 validateArgs
 
 #Create the network using docker compose
 if [ "${UP_DOWN}" == "up" ]; then
 	networkUp
+elif [ "${UP_DOWN}" == "test" ]; then
+	e2eTest
 elif [ "${UP_DOWN}" == "down" ]; then ## Clear the network
 	networkDown
 elif [ "${UP_DOWN}" == "restart" ]; then ## Restart the network
