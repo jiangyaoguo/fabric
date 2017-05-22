@@ -18,6 +18,7 @@ import (
 	"github.com/hyperledger/fabric/core/container/ccintf"
 	"github.com/hyperledger/fabric/core/container/dockercontroller"
 	"github.com/hyperledger/fabric/core/container/inproccontroller"
+	"github.com/hyperledger/fabric/core/container/mockcontroller"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
@@ -50,6 +51,7 @@ func NewVMController() *VMController {
 		vmProviders: map[string]VMProvider{
 			DOCKER: dockercontroller.NewProvider(),
 			SYSTEM: inproccontroller.NewProvider(),
+			MOCKVM: mockcontroller.NewProvider(),
 		},
 	}
 }
@@ -58,6 +60,7 @@ func NewVMController() *VMController {
 const (
 	DOCKER = "Docker"
 	SYSTEM = "System"
+	MOCKVM = "MockVM"
 )
 
 func (vmc *VMController) newVM(typ string) api.VM {

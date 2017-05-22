@@ -546,6 +546,13 @@ chaincode:
     # A value <= 0 turns keepalive off
     keepalive: 0
 
+    # Peer will stop chaincode containers that haven't been invoked (inactive)
+    # for given duration.
+    livetime: 10min
+
+    # Expired chaincodes check interval
+    gcinterval: 20s
+
     # system chaincodes whitelist. To add system chaincode "myscc" to the
     # whitelist, add "myscc: enable" to the list below, and register in
     # chaincode/importsysccs.go

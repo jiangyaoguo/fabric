@@ -14,6 +14,7 @@ import (
 	"github.com/hyperledger/fabric/core/common/ccprovider"
 	"github.com/hyperledger/fabric/core/common/sysccprovider"
 	"github.com/hyperledger/fabric/core/container/ccintf"
+	"github.com/hyperledger/fabric/core/container/gc"
 	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -34,6 +35,7 @@ type ChaincodeSupport struct {
 	ACLProvider     ACLProvider
 	HandlerRegistry *HandlerRegistry
 	Launcher        *Launcher
+	GCManager       *gc.GCManager
 	sccp            sysccprovider.SystemChaincodeProvider
 }
 
@@ -82,6 +84,19 @@ func NewChaincodeSupport(
 		Lifecycle:       &Lifecycle{Executor: cs},
 		StartupTimeout:  config.StartupTimeout,
 	}
+
+	// set default values of gc relevant variables
+	vmLiveTime := time.Duration(10) * time.Minute
+	gcInterval := time.Duration(20) * time.Second
+	liveTime := viper.GetDuration("chaincode.livetime")
+	if liveTime > 0*time.Second {
+		vmLiveTime = liveTime
+	}
+	interval := viper.GetDuration("chaincode.gcInterval")
+	if interval > 0*time.Second {
+		gcInterval = interval
+	}
+	cs.gcManager = gc.NewGCManager("Docker", vmLiveTime, gcInterval)
 
 	return cs
 }
@@ -171,6 +186,11 @@ func (cs *ChaincodeSupport) ExecuteChaincode(ctxt context.Context, cccid *ccprov
 		return nil, nil, err
 	}
 
+	// add chaincode container info to GCManager
+	if !(cccid.Syscc || chaincodeSupport.userRunsCC) && (err == nil) {
+		chaincodeSupport.gcManager.AddVM(canName, ccid, time.Now())
+	}
+
 	return res, ccevent, err
 }
 
@@ -237,6 +257,10 @@ func (cs *ChaincodeSupport) execute(ctxt context.Context, cccid *ccprovider.CCCo
 	if handler == nil {
 		chaincodeLogger.Debugf("chaincode is not running: %s", cname)
 		return nil, errors.Errorf("unable to invoke chaincode %s", cname)
+	}
+
+	if !(cccid.Syscc || cs.userRunsCC) {
+		chaincodeSupport.gcManager.UpdateVM(canName, time.Now())
 	}
 
 	ccresp, err := handler.Execute(ctxt, cccid, msg, cs.ExecuteTimeout)
