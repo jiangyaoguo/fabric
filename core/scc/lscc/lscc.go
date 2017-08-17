@@ -61,6 +61,12 @@ const (
 	//UPGRADE upgrade chaincode
 	UPGRADE = "upgrade"
 
+	//START start disabled chaincode
+	START = "start"
+
+	//STOP disable chaincode
+	STOP = "stop"
+
 	//GETCCINFO get chaincode
 	GETCCINFO = "getid"
 
@@ -597,6 +603,9 @@ func (lscc *LifeCycleSysCC) executeDeploy(stub shim.ChaincodeStubInterface, chai
 		return nil, err
 	}
 
+	//enable chaincode
+	cd.Status = "valid"
+
 	err = lscc.createChaincode(stub, cd)
 
 	return cd, err
@@ -635,6 +644,7 @@ func (lscc *LifeCycleSysCC) executeUpgrade(stub shim.ChaincodeStubInterface, cha
 	if err != nil {
 		return nil, err
 	}
+	status := cd.Status
 
 	//do not upgrade if same version
 	if cd.Version == cds.ChaincodeSpec.ChaincodeId.Version {
@@ -662,6 +672,7 @@ func (lscc *LifeCycleSysCC) executeUpgrade(stub shim.ChaincodeStubInterface, cha
 	cd.Escc = string(escc)
 	cd.Vscc = string(vscc)
 	cd.Policy = policy
+	cd.Status = status
 
 	// retrieve and evaluate new instantiation policy
 	cd.InstantiationPolicy, err = lscc.getInstantiationPolicy(chainName, ccpack)
@@ -839,6 +850,51 @@ func (lscc *LifeCycleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 		if err != nil {
 			return shim.Error(err.Error())
 		}
+		return shim.Success(cdbytes)
+	case START, STOP:
+		if len(args) != 3 {
+			return shim.Error(InvalidArgsLenErr(len(args)).Error())
+		}
+
+		chain := string(args[1])
+		ccname := string(args[2])
+
+		cdbytes, _ := lscc.getCCInstance(stub, ccname)
+		if cdbytes == nil {
+			return shim.Error(NotFoundErr(chain).Error())
+		}
+		cd, err := lscc.getChaincodeData(ccname, cdbytes)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+		if function == START {
+			if cd.Status != "invalid" {
+				err := fmt.Errorf("Chaincode %s on channel %s has been started", ccname, chain)
+				return shim.Error(err.Error())
+			}
+			cd.Status = "valid"
+		} else {
+			if cd.Status != "valid" {
+				err := fmt.Errorf("Chaincode %s on channel %s has been stopped", ccname, chain)
+				return shim.Error(err.Error())
+			}
+			cd.Status = "invalid"
+		}
+
+		cdbytes, err = proto.Marshal(cd)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if cdbytes == nil {
+			return shim.Error(MarshallErr(cd.Name).Error())
+		}
+
+		err = stub.PutState(cd.Name, cdbytes)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
 		return shim.Success(cdbytes)
 	case GETCCINFO, GETDEPSPEC, GETCCDATA:
 		if len(args) != 3 {

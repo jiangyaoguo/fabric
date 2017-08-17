@@ -41,6 +41,7 @@ const (
 	TxValidationCode_BAD_RESPONSE_PAYLOAD         TxValidationCode = 21
 	TxValidationCode_BAD_RWSET                    TxValidationCode = 22
 	TxValidationCode_ILLEGAL_WRITESET             TxValidationCode = 23
+	TxValidationCode_INVALID_CHAINCODE            TxValidationCode = 24
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 255
 )
 

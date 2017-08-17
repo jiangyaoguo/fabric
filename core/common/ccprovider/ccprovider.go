@@ -406,6 +406,9 @@ type ChaincodeData struct {
 
 	//InstantiationPolicy for the chaincode
 	InstantiationPolicy []byte `protobuf:"bytes,8,opt,name=instantiation_policy,proto3"`
+
+	//Status of chaincode, "valid" or "invalid"
+	Status string
 }
 
 //implement functions needed from proto.Message for proto's mar/unmarshal functions

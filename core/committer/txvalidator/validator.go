@@ -387,10 +387,11 @@ func (v *txValidator) getUpgradeTxInstance(chainID string, cdsBytes []byte) (*sy
 	}, nil
 }
 
-// GetInfoForValidate gets the ChaincodeInstance(with latest version) of tx, vscc and policy from lscc
-func (v *vsccValidatorImpl) GetInfoForValidate(txid, chID, ccID string) (*sysccprovider.ChaincodeInstance, *sysccprovider.ChaincodeInstance, []byte, error) {
+// GetInfoForValidate gets the ChaincodeInstance(with latest version) of tx, vscc ,status and policy from lscc
+func (v *vsccValidatorImpl) GetInfoForValidate(txid, chID, ccID string) (*sysccprovider.ChaincodeInstance, *sysccprovider.ChaincodeInstance, string, []byte, error) {
 	cc := &sysccprovider.ChaincodeInstance{ChainID: chID}
 	vscc := &sysccprovider.ChaincodeInstance{ChainID: chID}
+	var status string
 	var policy []byte
 	var err error
 	if !sysccprovider.GetSystemChaincodeProvider().IsSysCC(ccID) {
@@ -403,11 +404,12 @@ func (v *vsccValidatorImpl) GetInfoForValidate(txid, chID, ccID string) (*sysccp
 		if err != nil {
 			msg := fmt.Sprintf("Unable to get chaincode data from ledger for txid %s, due to %s", txid, err)
 			logger.Errorf(msg)
-			return nil, nil, nil, err
+			return nil, nil, "invalid", nil, err
 		}
 		cc.ChaincodeName = cd.Name
 		cc.ChaincodeVersion = cd.Version
 		vscc.ChaincodeName = cd.Vscc
+		status = cd.Status
 		policy = cd.Policy
 	} else {
 		// when we are validating a system CC, we use the default
@@ -417,16 +419,18 @@ func (v *vsccValidatorImpl) GetInfoForValidate(txid, chID, ccID string) (*sysccp
 		cc.ChaincodeVersion = coreUtil.GetSysCCVersion()
 		vscc.ChaincodeName = "vscc"
 		p := cauthdsl.SignedByAnyMember(v.support.GetMSPIDs(chID))
+		// system chaincodes are always valid
+		status = "valid"
 		policy, err = utils.Marshal(p)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, status, nil, err
 		}
 	}
 
 	// Get vscc version
 	vscc.ChaincodeVersion = coreUtil.GetSysCCVersion()
 
-	return cc, vscc, policy, nil
+	return cc, vscc, status, policy, nil
 }
 
 func (v *vsccValidatorImpl) VSCCValidateTx(payload *common.Payload, envBytes []byte, env *common.Envelope) (error, peer.TxValidationCode) {
@@ -529,10 +533,16 @@ func (v *vsccValidatorImpl) VSCCValidateTx(payload *common.Payload, envBytes []b
 		// validate *EACH* read write set according to its chaincode's endorsement policy
 		for _, ns := range wrNamespace {
 			// Get latest chaincode version, vscc and validate policy
-			txcc, vscc, policy, err := v.GetInfoForValidate(chdr.TxId, chdr.ChannelId, ns)
+			txcc, vscc, status, policy, err := v.GetInfoForValidate(chdr.TxId, chdr.ChannelId, ns)
 			if err != nil {
 				logger.Errorf("GetInfoForValidate for txId = %s returned error %s", chdr.TxId, err)
 				return err, peer.TxValidationCode_INVALID_OTHER_REASON
+			}
+
+			if status == "invalid" {
+				err := fmt.Errorf("Chaincode %s/%s has been stopped", ccID, chdr.ChannelId)
+				logger.Errorf(err.Error())
+				return err, peer.TxValidationCode_INVALID_CHAINCODE
 			}
 
 			// if the namespace corresponds to the cc that was originally
@@ -565,7 +575,8 @@ func (v *vsccValidatorImpl) VSCCValidateTx(payload *common.Payload, envBytes []b
 		}
 
 		// Get latest chaincode version, vscc and validate policy
-		_, vscc, policy, err := v.GetInfoForValidate(chdr.TxId, chdr.ChannelId, ccID)
+		// ignore status because systemchaincodes are always valid
+		_, vscc, _, policy, err := v.GetInfoForValidate(chdr.TxId, chdr.ChannelId, ccID)
 		if err != nil {
 			logger.Errorf("GetInfoForValidate for txId = %s returned error %s", chdr.TxId, err)
 			return err, peer.TxValidationCode_INVALID_OTHER_REASON

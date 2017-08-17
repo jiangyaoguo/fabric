@@ -241,6 +241,9 @@ func (e *Endorser) simulateProposal(ctx context.Context, chainID string, txid st
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("%s - make sure the chaincode %s has been successfully instantiated and try again", err, cid.Name)
 		}
+		if cdLedger.Status == "invalid" {
+			return nil, nil, nil, nil, fmt.Errorf("Chaincode %s on channel %s has been stopped ", cid.Name, chainID)
+		}
 		version = cdLedger.Version
 
 		err = ccprovider.CheckInsantiationPolicy(cid.Name, version, cdLedger)
