@@ -165,6 +165,36 @@ instantiateChaincode () {
 	echo
 }
 
+stopChaincode () {
+	PEER=$1
+	setGlobals $PEER
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+		peer chaincode stop -o orderer.example.com:7050 -C $CHANNEL_NAME -n mycc >&log.txt
+	else
+		peer chaincode stop -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc >&log.txt
+	fi
+	res=$?
+	cat log.txt
+	verifyResult $res "Stop chaincode on PEER$PEER on channel '$CHANNEL_NAME' failed"
+	echo "===================== Stop chaincode on PEER$PEER on channel '$CHANNEL_NAME' is successful ===================== "
+	echo
+}
+
+startChaincode () {
+	PEER=$1
+	setGlobals $PEER
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+		peer chaincode start -o orderer.example.com:7050 -C $CHANNEL_NAME -n mycc >&log.txt
+	else
+		peer chaincode start -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc >&log.txt
+	fi
+	res=$?
+	cat log.txt
+	verifyResult $res "Start chaincode on PEER$PEER on channel '$CHANNEL_NAME' failed"
+	echo "===================== Start chaincode on PEER$PEER on channel '$CHANNEL_NAME' is successful ===================== "
+	echo
+}
+
 upgradeChaincode () {
 	PEER=$1
 	VERSION=$2

@@ -50,6 +50,10 @@ chaincodeInvoke 0 '{"Args":["invoke","10"]}'
 echo "send Invoke transaction on org1/peer0 ..."
 chaincodeQuery 2 a 90
 
+#Stop chaincode
+echo "stop chaincode on org1/peer0"
+stopChaincode 0
+
 ## Install new chaincode on Peer0/Org1 and Peer2/Org2
 echo "Installing chaincode v2 on org1/peer0..."
 installChaincode 0 github.com/hyperledger/fabric/examples/chaincode/go/chaincode_v2 2.0
@@ -59,6 +63,10 @@ installChaincode 2 github.com/hyperledger/fabric/examples/chaincode/go/chaincode
 #Upgrade chaincode to version 2.0 on Peer2/Org2
 echo "upgrade chaincode to v2 on org2/peer2 ..."
 upgradeChaincode 2 2.0 '{"Args":["init","a","200","c","300"]}'
+
+#Start chaincode
+echo "start chaincode on org1/peer0"
+startChaincode 0
 
 #Query on chaincode on Peer0/Org1
 echo "Querying chaincode on org1/peer0..."
