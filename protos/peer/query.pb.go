@@ -48,6 +48,8 @@ type ChaincodeInfo struct {
 	// the name of the VSCC for this chaincode. This will be
 	// blank if the query is returning information about installed chaincodes.
 	Vscc string `protobuf:"bytes,6,opt,name=vscc" json:"vscc,omitempty"`
+	// the status of chaincode, "valid" or "invalid"
+	Status string `protobuf:"bytes,7,opt,name=status" json:"status,omitempty"`
 }
 
 func (m *ChaincodeInfo) Reset()                    { *m = ChaincodeInfo{} }

@@ -367,7 +367,7 @@ func (lscc *LifeCycleSysCC) getChaincodes(stub shim.ChaincodeStubInterface) pb.R
 			input = ccpack.GetDepSpec().GetChaincodeSpec().Input.String()
 		}
 
-		ccInfo := &pb.ChaincodeInfo{Name: ccdata.Name, Version: ccdata.Version, Path: path, Input: input, Escc: ccdata.Escc, Vscc: ccdata.Vscc}
+		ccInfo := &pb.ChaincodeInfo{Name: ccdata.Name, Version: ccdata.Version, Path: path, Input: input, Escc: ccdata.Escc, Vscc: ccdata.Vscc, Status: ccdata.Status}
 
 		// add this specific chaincode's metadata to the array of all chaincodes
 		ccInfoArray = append(ccInfoArray, ccInfo)

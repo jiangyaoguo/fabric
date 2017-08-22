@@ -53,6 +53,8 @@ func Cmd(cf *ChaincodeCmdFactory) *cobra.Command {
 	chaincodeCmd.AddCommand(queryCmd(cf))
 	chaincodeCmd.AddCommand(signpackageCmd(cf))
 	chaincodeCmd.AddCommand(upgradeCmd(cf))
+	chaincodeCmd.AddCommand(startCmd(cf))
+	chaincodeCmd.AddCommand(stopCmd(cf))
 
 	return chaincodeCmd
 }

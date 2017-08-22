@@ -480,6 +480,20 @@ func createProposalFromCDS(chainID string, msg proto.Message, creator []byte, po
 	return CreateProposalFromCIS(common.HeaderType_ENDORSER_TRANSACTION, chainID, lsccSpec, creator)
 }
 
+//CreateActionProposal returns a chaincode start or stop proposal given a serialized identity and specified chaincode
+func CreateActionProposal(chainID string, chaincodeId string, action string, creator []byte) (*peer.Proposal, string, error) {
+	ccinp := &peer.ChaincodeInput{Args: [][]byte{[]byte(action), []byte(chainID), []byte(chaincodeId)}}
+
+	lsccSpec := &peer.ChaincodeInvocationSpec{
+		ChaincodeSpec: &peer.ChaincodeSpec{
+			Type:        peer.ChaincodeSpec_GOLANG,
+			ChaincodeId: &peer.ChaincodeID{Name: "lscc"},
+			Input:       ccinp}}
+
+	//...and get the proposal for it
+	return CreateProposalFromCIS(common.HeaderType_ENDORSER_TRANSACTION, chainID, lsccSpec, creator)
+}
+
 // ComputeProposalTxID computes TxID as the Hash computed
 // over the concatenation of nonce and creator.
 func ComputeProposalTxID(nonce, creator []byte) (string, error) {
